@@ -193,7 +193,32 @@ export async function gameLoop(file?: File) {
             case 'ROBOT': {
             }
             case 'REPORT': {
-              console.log('Robot is at', currentPos, currentDir);
+              // Convert currentDir to its text value
+              let facingDirection: string;
+              switch (currentDir[0]) {
+                case 0:
+                  facingDirection = 'NORTH';
+                  break;
+                case 1:
+                  facingDirection = 'EAST';
+                  break;
+                case -1:
+                  facingDirection = 'WEST';
+                  break;
+                case -1:
+                  facingDirection = 'SOUTH';
+                  break;
+                default:
+                  facingDirection = 'UNKNOWN';
+                  break;
+              }
+
+              console.log(
+                'Output: ',
+                currentPos[0] + ',',
+                currentPos[1] + ',',
+                facingDirection
+              );
               return true;
             }
             default: {
