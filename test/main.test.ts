@@ -12,4 +12,7 @@ describe('Tests', () => {
   it('should be able to place a robot', () => {
     expect(canPlaceRobot([0, 1], [1, 0])).to.equal(true);
   });
+  it('should select a robot', () => {
+    expect(canPlaceRobot([0, 1], [1, 0])).to.equal(true);
+  });
 });

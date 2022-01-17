@@ -14,10 +14,10 @@ enum Dir {
 }
 
 const direction = [
-  [1, 0],
   [0, 1],
-  [-1, 0],
+  [1, 0],
   [0, -1],
+  [-1, 0],
 ];
 
 let initialPos: number[];
@@ -36,7 +36,6 @@ interface Robot {
 let robotsList: Array<Robot> = [];
 
 export function robotMove(map: number[], dir: number[]): boolean {
-  // This is a wall, cant move
   if (
     map[0] + dir[0] < 0 ||
     map[0] + dir[0] > 4 ||
@@ -103,63 +102,114 @@ export function getFacingDirection(direction: string): number {
   }
 }
 
-export function gameLoop(): boolean {
+export async function gameLoop(file?: File) {
   let activeRobot: Robot;
-  let gameOver: boolean = rl.question(
+  rl.question(
     'Please enter a command (PLACE, MOVE, LEFT, RIGHT, REPORT, or EXIT): ',
     function (answer: string) {
-      if (answer.startsWith('PLACE')) {
-        let pos = answer.split(' ')[1].split(',');
-        let row = parseInt(pos[0]);
-        let col = parseInt(pos[1]);
-        let dir = pos[2];
+      const result = async (): Promise<Boolean> => {
+        console.log(answer);
+        console.log(currentDir);
+        if (answer === 'EXIT') {
+          rl.close();
+          return true;
+        }
 
-        initialPos = [row, col];
-        initialDir = direction[getFacingDirection(dir)];
+        if (initialPos == null && (await !answer.startsWith('PLACE'))) {
+          console.log('Robot must be placed first.');
+          return false;
+        }
 
-        canPlaceRobot(initialPos, initialDir);
-        gameLoop();
-      }
+        if (answer.startsWith('ROBOT')) {
+          // ROBOT 1 will select that robot
+          const robotId = parseInt(answer.split(' ')[1]);
+          activeRobot = robotsList.find((robot) => robot.id === robotId);
+          if (activeRobot == null) {
+            console.log('Robot not found');
+            return false;
+          }
 
-      if (answer === 'EXIT') {
-        rl.close();
-        return true;
-      } else if (initialPos == null) {
-        console.log('Robot must be placed first.');
-        gameLoop();
-        return false;
-      } else {
-        switch (answer) {
-          case 'MOVE': {
-            gameLoop();
-            return robotMove(currentPos, currentDir);
-          }
-          case 'LEFT': {
-            let dir = currentDir.map((x) => x * -1);
+          currentPos = activeRobot.currentPos;
+          currentDir = activeRobot.currentDir;
+          console.log('Robot selected', activeRobot.id, currentPos, currentDir);
+          return true;
+        }
 
-            gameLoop();
-            return robotMove(currentPos, dir);
-          }
-          case 'RIGHT': {
-          }
-          case 'REPORT': {
-            console.log('Robot is at', currentPos, currentDir);
-            return true;
-          }
-          default: {
-            console.log('Invalid command');
-            gameLoop();
+        if (answer.startsWith('PLACE')) {
+          let pos = answer.split(' ')[1].split(',');
+          let row = parseInt(pos[0]);
+          let col = parseInt(pos[1]);
+          let dir = pos[2];
+
+          initialPos = [row, col];
+          initialDir = direction[getFacingDirection(dir)];
+
+          canPlaceRobot(initialPos, initialDir);
+          return false;
+        } else {
+          switch (answer) {
+            case 'MOVE': {
+              return robotMove(currentPos, currentDir);
+            }
+            case 'LEFT': {
+              if (currentDir[0] === 0 && currentDir[1] === 1) {
+                currentDir = direction[getFacingDirection('SOUTH')];
+                return false;
+              }
+              if (currentDir[0] === 0 && currentDir[1] === -1) {
+                currentDir = direction[getFacingDirection('EAST')];
+                return false;
+              }
+              if (currentDir[0] === 1 && currentDir[1] === 0) {
+                currentDir = direction[getFacingDirection('NORTH')];
+                return false;
+              }
+              if (currentDir[0] === -1 && currentDir[1] === 0) {
+                currentDir = direction[getFacingDirection('WEST')];
+                return false;
+              }
+              return false;
+            }
+            case 'RIGHT': {
+              if (currentDir[0] === 0 && currentDir[1] === 1) {
+                currentDir = direction[getFacingDirection('EAST')];
+                console.log(currentDir);
+                return false;
+              }
+              if (currentDir[0] === 0 && currentDir[1] === -1) {
+                currentDir = direction[getFacingDirection('NORTH')];
+                return false;
+              }
+              if (currentDir[0] === 1 && currentDir[1] === 0) {
+                currentDir = direction[getFacingDirection('SOUTH')];
+                return false;
+              }
+              if (currentDir[0] === -1 && currentDir[1] === 0) {
+                currentDir = direction[getFacingDirection('WEST')];
+                return false;
+              }
+              return false;
+            }
+            case 'ROBOT': {
+            }
+            case 'REPORT': {
+              console.log('Robot is at', currentPos, currentDir);
+              return true;
+            }
+            default: {
+              console.log('Invalid command');
+              return false;
+            }
           }
         }
-      }
+      };
+
+      result().then((res) => {
+        gameLoop();
+        return res;
+      });
     }
   );
-
-  if (gameOver) {
-    return true;
-  } else {
-    return false;
-  }
 }
 
 gameLoop();
