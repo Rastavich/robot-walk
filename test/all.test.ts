@@ -12,7 +12,7 @@ import { expect } from 'chai';
 describe('Test all', () => {
   //place a robot
   it('should be able to place a robot', () => {
-    expect(handlePlace('PLACE 1,1,NORTH')).to.eql([[1, 1], 'NORTH']);
+    expect(handlePlace('PLACE 1,1,NORTH')).to.eql(['1, 1', 'NORTH']);
   });
   // move a robot
   it('should be able to move a robot', () => {
@@ -28,10 +28,16 @@ describe('Test all', () => {
   });
   // report a robot
   it('should be able to report a robot', () => {
-    expect(handleReport([0, 1])).to.eql('NORTH');
+    expect(handleReport([0, 1], [1, 2])).to.eql(['1, 2', 'NORTH']);
   });
   // Select a robot
   it('should be able to select a robot', () => {
     expect(handleRobot('ROBOT 1')).to.equal(true);
+  });
+  it('should be able to place a second robot', () => {
+    expect(handlePlace('PLACE 3,2,WEST')).to.eql(['3, 2', 'WEST']);
+  });
+  it('should be able to select the old robot', () => {
+    expect(handleRobot('ROBOT 1')).to.eql(true);
   });
 });

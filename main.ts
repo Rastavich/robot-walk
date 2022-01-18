@@ -169,11 +169,6 @@ export function handleReport(dir: number[], pos: number[]): String[] {
   return [pos[0] + ', ' + pos[1], facingDirection];
 }
 
-export function handleExit(): Boolean {
-  rl.close();
-  return false;
-}
-
 export function handleRobot(answer: String): Boolean {
   const robotId = parseInt(answer.split(' ')[1]);
   console.log(robotId);
@@ -195,12 +190,17 @@ export async function gameLoop(file?: File) {
     function (answer: string) {
       const result = async (): Promise<Boolean> => {
         if (answer === 'EXIT') {
-          return handleExit();
+          rl.close();
+          return false;
         }
 
-        if (initialPos == null && !answer.startsWith('PLACE')) {
+        if (
+          initialPos == null &&
+          !answer.startsWith('PLACE') &&
+          answer != 'EXIT'
+        ) {
           console.log('Robot must be placed first.');
-          return false;
+          return true;
         }
 
         if (answer.startsWith('ROBOT')) {
@@ -208,11 +208,13 @@ export async function gameLoop(file?: File) {
         }
 
         if (answer.startsWith('PLACE')) {
-          return handlePlace(answer) == null ? false : true;
+          handlePlace(answer);
+          return true;
         } else {
           switch (answer) {
             case 'MOVE': {
-              return handleMove(currentPos, currentDir) == [] ? false : true;
+              handleMove(currentPos, currentDir);
+              return true;
             }
             case 'LEFT': {
               return handleLeft();
@@ -221,22 +223,21 @@ export async function gameLoop(file?: File) {
               return handleRight();
             }
             case 'REPORT': {
-              return handleReport(
-                activeRobot.currentDir,
-                activeRobot.currentPos
-              ) == ['', '']
-                ? false
-                : true;
+              handleReport(activeRobot.currentDir, activeRobot.currentPos);
+              return true;
             }
             default: {
               console.log('Invalid command');
-              return false;
+              return true;
             }
           }
         }
       };
 
       result().then((res) => {
+        if (!res) {
+          return;
+        }
         gameLoop();
         return res;
       });
