@@ -1,5 +1,4 @@
 import {
-  getFacingDirection,
   handleMove,
   handlePlace,
   handleLeft,
@@ -10,10 +9,10 @@ import {
 
 import { expect } from 'chai';
 
-describe('Tests', () => {
+describe('Test all', () => {
   //place a robot
   it('should be able to place a robot', () => {
-    expect(handlePlace('PLACE 0,0,NORTH')).to.eql([[0, 0], 'NORTH']);
+    expect(handlePlace('PLACE 1,1,NORTH')).to.eql([[1, 1], 'NORTH']);
   });
   // move a robot
   it('should be able to move a robot', () => {

@@ -22,7 +22,7 @@ export function handleMove(map: number[], dir: number[]): number[] {
     map[1] + dir[1] > gridSize.maxY
   ) {
     console.log('Robot cant move');
-    return null;
+    return [];
   }
 
   // This is a valid move
@@ -37,7 +37,7 @@ export function handleMove(map: number[], dir: number[]): number[] {
   return currentPos;
 }
 
-export function handlePlace(answer: String): [number[], String] {
+export function handlePlace(answer: String): String[] {
   let pos = answer.split(' ')[1].split(',');
   let row = parseInt(pos[0]);
   let col = parseInt(pos[1]);
@@ -84,9 +84,10 @@ export function handlePlace(answer: String): [number[], String] {
   };
 
   robotsList.push(robot);
+  activeRobot = robot;
   console.log('Robot info', robot.id, robot.initialPos, robot.initialDir);
   console.log('Robot placed', currentPos, initialDir);
-  return [currentPos, handleReport(currentDir)];
+  return handleReport(currentDir, currentPos);
 }
 
 export function getFacingDirection(direction: string): number {
@@ -128,11 +129,11 @@ export function handleRight(): Boolean {
 
 export function handleLeft(): Boolean {
   if (currentDir[0] === 0 && currentDir[1] === 1) {
-    currentDir = dirCords[getFacingDirection('SOUTH')];
+    currentDir = dirCords[getFacingDirection(directions.south)];
     return true;
   }
   if (currentDir[0] === 0 && currentDir[1] === -1) {
-    currentDir = dirCords[getFacingDirection('EAST')];
+    currentDir = dirCords[getFacingDirection(directions.east)];
     return true;
   }
   if (currentDir[0] === 1 && currentDir[1] === 0) {
@@ -140,45 +141,32 @@ export function handleLeft(): Boolean {
     return true;
   }
   if (currentDir[0] === -1 && currentDir[1] === 0) {
-    currentDir = dirCords[getFacingDirection('WEST')];
+    currentDir = dirCords[getFacingDirection(directions.west)];
     return true;
   }
   return false;
 }
 
-export function handleReport(dir): String {
+export function handleReport(dir: number[], pos: number[]): String[] {
   // Convert currentDir to its text value
   let facingDirection: string;
-  switch (dir[0]) {
-    case 1:
-      facingDirection = directions.east;
-      break;
-    case -1:
-      facingDirection = directions.west;
-      break;
-    default:
-      facingDirection = 'UNKNOWN';
-      break;
-  }
-  switch (dir[1]) {
-    case 1:
-      facingDirection = directions.north;
-      break;
-    case -1:
-      facingDirection = directions.south;
-      break;
-    default:
-      facingDirection = 'UNKNOWN';
-      break;
+  // Get facing direction of activeRobot
+
+  if (dir[0] === 0 && dir[1] === 1) {
+    facingDirection = directions.north;
+  } else if (dir[0] === 0 && dir[1] === -1) {
+    facingDirection = directions.south;
+  } else if (dir[0] === 1 && dir[1] === 0) {
+    facingDirection = directions.east;
+  } else if (dir[0] === -1 && dir[1] === 0) {
+    facingDirection = directions.west;
+  } else {
+    console.log('Invalid direction');
+    return ['', ''];
   }
 
-  console.log(
-    'Output: ',
-    currentPos[0] + ',',
-    currentPos[1] + ',',
-    facingDirection
-  );
-  return facingDirection;
+  console.log('Output: ', pos[0] + ',', pos[1] + ',', facingDirection);
+  return [pos[0] + ', ' + pos[1], facingDirection];
 }
 
 export function handleExit(): Boolean {
@@ -224,7 +212,7 @@ export async function gameLoop(file?: File) {
         } else {
           switch (answer) {
             case 'MOVE': {
-              return handleMove(currentPos, currentDir) == null ? false : true;
+              return handleMove(currentPos, currentDir) == [] ? false : true;
             }
             case 'LEFT': {
               return handleLeft();
@@ -233,7 +221,12 @@ export async function gameLoop(file?: File) {
               return handleRight();
             }
             case 'REPORT': {
-              return handleReport(currentDir) == 'UNKOWN' ? false : true;
+              return handleReport(
+                activeRobot.currentDir,
+                activeRobot.currentPos
+              ) == ['', '']
+                ? false
+                : true;
             }
             default: {
               console.log('Invalid command');
