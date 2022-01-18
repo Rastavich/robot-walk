@@ -1,18 +1,38 @@
-import { getFacingDirection, canPlaceRobot, robotMove } from '../main';
+import {
+  getFacingDirection,
+  handleMove,
+  handlePlace,
+  handleLeft,
+  handleRight,
+  handleReport,
+  handleRobot,
+} from '../main';
 
 import { expect } from 'chai';
 
 describe('Tests', () => {
-  it('should be able to return the correct directions enum mapping', () => {
-    expect(getFacingDirection('NORTH')).to.equal(0);
-    expect(getFacingDirection('SOUTH')).to.equal(2);
-    expect(getFacingDirection('EAST')).to.equal(1);
-    expect(getFacingDirection('WEST')).to.equal(3);
-  });
+  //place a robot
   it('should be able to place a robot', () => {
-    expect(canPlaceRobot([0, 1], [1, 0])).to.equal(true);
+    expect(handlePlace('PLACE 0,0,NORTH')).to.eql([[0, 0], 'NORTH']);
   });
-  it('should select a robot', () => {
-    expect(canPlaceRobot([0, 1], [1, 0])).to.equal(true);
+  // move a robot
+  it('should be able to move a robot', () => {
+    expect(handleMove([0, 0], [0, 1])).to.eql([0, 1]);
+  });
+  // turn a robot left
+  it('should be able to turn a robot left', () => {
+    expect(handleLeft()).to.equal(true);
+  });
+  // turn a robot right
+  it('should be able to turn a robot right', () => {
+    expect(handleRight()).to.equal(true);
+  });
+  // report a robot
+  it('should be able to report a robot', () => {
+    expect(handleReport([0, 1])).to.eql('NORTH');
+  });
+  // Select a robot
+  it('should be able to select a robot', () => {
+    expect(handleRobot('ROBOT 1')).to.equal(true);
   });
 });

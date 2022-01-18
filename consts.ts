@@ -26,3 +26,11 @@ export const gridSize = {
   minY: 0,
   maxY: 4,
 };
+
+export interface Robot {
+  id: number;
+  initialPos: number[];
+  initialDir: number[];
+  currentPos: number[];
+  currentDir: number[];
+}
