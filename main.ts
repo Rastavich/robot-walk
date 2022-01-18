@@ -1,24 +1,10 @@
+import { dirCords, Dir, directions, gridSize } from './consts';
 var readline = require('readline');
 
 var rl = readline.createInterface({
   input: process.stdin,
   output: process.stdout,
 });
-
-enum Dir {
-  North = 0,
-  South = 2,
-  West = 3,
-  East = 1,
-  None,
-}
-
-const direction = [
-  [0, 1],
-  [1, 0],
-  [0, -1],
-  [-1, 0],
-];
 
 let initialPos: number[];
 let initialDir: number[];
@@ -34,13 +20,14 @@ interface Robot {
 }
 
 let robotsList: Array<Robot> = [];
+let activeRobot: Robot;
 
-export function robotMove(map: number[], dir: number[]): boolean {
+export function handleMove(map: number[], dir: number[]): boolean {
   if (
-    map[0] + dir[0] < 0 ||
-    map[0] + dir[0] > 4 ||
-    map[1] + dir[1] < 0 ||
-    map[1] + dir[1] > 4
+    map[0] + dir[0] < gridSize.minX ||
+    map[0] + dir[0] > gridSize.maxX ||
+    map[1] + dir[1] < gridSize.minY ||
+    map[1] + dir[1] > gridSize.maxY
   ) {
     console.log('Robot cant move');
     return false;
@@ -58,26 +45,50 @@ export function robotMove(map: number[], dir: number[]): boolean {
   return true;
 }
 
-export function canPlaceRobot(pos: number[], dir: number[]): boolean {
+export function handlePlace(answer: String): boolean {
+  let pos = answer.split(' ')[1].split(',');
+  let row = parseInt(pos[0]);
+  let col = parseInt(pos[1]);
+  let dir = pos[2];
+
+  initialPos = [row, col];
+  initialDir = dirCords[getFacingDirection(dir)];
+
   if (pos == null || dir == null) {
     console.log('Invalid input');
     return false;
   }
 
-  if (pos[0] < 0 || pos[0] > 4 || pos[1] < 0 || pos[1] > 4) {
+  if (
+    initialPos[0] < gridSize.minX ||
+    initialPos[0] > gridSize.maxX ||
+    initialPos[1] < gridSize.minY ||
+    initialPos[1] > gridSize.maxY
+  ) {
     console.log('Robot must be placed in the grid');
     return false;
   }
 
-  currentPos = pos;
-  currentDir = dir;
+  // If there is already a robot in the position then return false
+  for (let value of robotsList) {
+    if (
+      value.currentPos[0] == initialPos[0] &&
+      value.currentPos[1] == initialPos[1]
+    ) {
+      console.log('Robot already exists');
+      return false;
+    }
+  }
+
+  currentPos = initialPos;
+  currentDir = initialDir;
 
   let robot: Robot = {
-    id: robotsList.length + 1,
-    initialPos: pos,
-    initialDir: dir,
-    currentPos: pos,
-    currentDir: dir,
+    id: robotsList.length++,
+    initialPos: initialPos,
+    initialDir: initialDir,
+    currentPos: currentPos,
+    currentDir: currentDir,
   };
 
   robotsList.push(robot);
@@ -88,13 +99,13 @@ export function canPlaceRobot(pos: number[], dir: number[]): boolean {
 
 export function getFacingDirection(direction: string): number {
   switch (direction) {
-    case 'NORTH':
+    case directions.north:
       return Dir.North;
-    case 'SOUTH':
+    case directions.south:
       return Dir.South;
-    case 'WEST':
+    case directions.west:
       return Dir.West;
-    case 'EAST':
+    case directions.east:
       return Dir.East;
     default:
       console.log('Invalid direction');
@@ -102,124 +113,129 @@ export function getFacingDirection(direction: string): number {
   }
 }
 
+function handleRight(): Boolean {
+  if (currentDir[0] === 0 && currentDir[1] === 1) {
+    currentDir = dirCords[getFacingDirection(directions.east)];
+    console.log(currentDir);
+    return true;
+  }
+  if (currentDir[0] === 0 && currentDir[1] === -1) {
+    currentDir = dirCords[getFacingDirection(directions.north)];
+    return true;
+  }
+  if (currentDir[0] === 1 && currentDir[1] === 0) {
+    currentDir = dirCords[getFacingDirection(directions.south)];
+    return true;
+  }
+  if (currentDir[0] === -1 && currentDir[1] === 0) {
+    currentDir = dirCords[getFacingDirection(directions.west)];
+    return true;
+  }
+  return false;
+}
+
+function handleLeft(): Boolean {
+  if (currentDir[0] === 0 && currentDir[1] === 1) {
+    currentDir = dirCords[getFacingDirection('SOUTH')];
+    return false;
+  }
+  if (currentDir[0] === 0 && currentDir[1] === -1) {
+    currentDir = dirCords[getFacingDirection('EAST')];
+    return false;
+  }
+  if (currentDir[0] === 1 && currentDir[1] === 0) {
+    currentDir = dirCords[getFacingDirection(directions.north)];
+    return false;
+  }
+  if (currentDir[0] === -1 && currentDir[1] === 0) {
+    currentDir = dirCords[getFacingDirection('WEST')];
+    return false;
+  }
+  return false;
+}
+
+function handleReport(): Boolean {
+  // Convert currentDir to its text value
+  let facingDirection: string;
+  switch (currentDir[0]) {
+    case 0:
+      facingDirection = directions.north;
+      break;
+    case 1:
+      facingDirection = 'EAST';
+      break;
+    case -1:
+      facingDirection = 'WEST';
+      break;
+    case -1:
+      facingDirection = 'SOUTH';
+      break;
+    default:
+      facingDirection = 'UNKNOWN';
+      break;
+  }
+
+  console.log(
+    'Output: ',
+    currentPos[0] + ',',
+    currentPos[1] + ',',
+    facingDirection
+  );
+  return true;
+}
+
+function handleExit(): Boolean {
+  rl.close();
+  return false;
+}
+
+function handleRobot(answer: String): Boolean {
+  const robotId = parseInt(answer.split(' ')[1]);
+  activeRobot = robotsList.find((robot) => robot.id === robotId);
+  if (activeRobot == null) {
+    console.log('Robot not found');
+    return false;
+  }
+
+  currentPos = activeRobot.currentPos;
+  currentDir = activeRobot.currentDir;
+  console.log('Robot selected', activeRobot.id, currentPos, currentDir);
+  return true;
+}
+
 export async function gameLoop(file?: File) {
-  let activeRobot: Robot;
   rl.question(
     'Please enter a command (PLACE, MOVE, LEFT, RIGHT, REPORT, or EXIT): ',
     function (answer: string) {
       const result = async (): Promise<Boolean> => {
-        console.log(answer);
-        console.log(currentDir);
         if (answer === 'EXIT') {
-          rl.close();
-          return true;
+          return handleExit();
         }
 
-        if (initialPos == null && (await !answer.startsWith('PLACE'))) {
+        if (initialPos == null && !answer.startsWith('PLACE')) {
           console.log('Robot must be placed first.');
           return false;
         }
 
         if (answer.startsWith('ROBOT')) {
-          // ROBOT 1 will select that robot
-          const robotId = parseInt(answer.split(' ')[1]);
-          activeRobot = robotsList.find((robot) => robot.id === robotId);
-          if (activeRobot == null) {
-            console.log('Robot not found');
-            return false;
-          }
-
-          currentPos = activeRobot.currentPos;
-          currentDir = activeRobot.currentDir;
-          console.log('Robot selected', activeRobot.id, currentPos, currentDir);
-          return true;
+          return handleRobot(answer);
         }
 
         if (answer.startsWith('PLACE')) {
-          let pos = answer.split(' ')[1].split(',');
-          let row = parseInt(pos[0]);
-          let col = parseInt(pos[1]);
-          let dir = pos[2];
-
-          initialPos = [row, col];
-          initialDir = direction[getFacingDirection(dir)];
-
-          canPlaceRobot(initialPos, initialDir);
-          return false;
+          return handlePlace(answer);
         } else {
           switch (answer) {
             case 'MOVE': {
-              return robotMove(currentPos, currentDir);
+              return handleMove(currentPos, currentDir);
             }
             case 'LEFT': {
-              if (currentDir[0] === 0 && currentDir[1] === 1) {
-                currentDir = direction[getFacingDirection('SOUTH')];
-                return false;
-              }
-              if (currentDir[0] === 0 && currentDir[1] === -1) {
-                currentDir = direction[getFacingDirection('EAST')];
-                return false;
-              }
-              if (currentDir[0] === 1 && currentDir[1] === 0) {
-                currentDir = direction[getFacingDirection('NORTH')];
-                return false;
-              }
-              if (currentDir[0] === -1 && currentDir[1] === 0) {
-                currentDir = direction[getFacingDirection('WEST')];
-                return false;
-              }
-              return false;
+              return handleLeft();
             }
             case 'RIGHT': {
-              if (currentDir[0] === 0 && currentDir[1] === 1) {
-                currentDir = direction[getFacingDirection('EAST')];
-                console.log(currentDir);
-                return false;
-              }
-              if (currentDir[0] === 0 && currentDir[1] === -1) {
-                currentDir = direction[getFacingDirection('NORTH')];
-                return false;
-              }
-              if (currentDir[0] === 1 && currentDir[1] === 0) {
-                currentDir = direction[getFacingDirection('SOUTH')];
-                return false;
-              }
-              if (currentDir[0] === -1 && currentDir[1] === 0) {
-                currentDir = direction[getFacingDirection('WEST')];
-                return false;
-              }
-              return false;
-            }
-            case 'ROBOT': {
+              return handleRight();
             }
             case 'REPORT': {
-              // Convert currentDir to its text value
-              let facingDirection: string;
-              switch (currentDir[0]) {
-                case 0:
-                  facingDirection = 'NORTH';
-                  break;
-                case 1:
-                  facingDirection = 'EAST';
-                  break;
-                case -1:
-                  facingDirection = 'WEST';
-                  break;
-                case -1:
-                  facingDirection = 'SOUTH';
-                  break;
-                default:
-                  facingDirection = 'UNKNOWN';
-                  break;
-              }
-
-              console.log(
-                'Output: ',
-                currentPos[0] + ',',
-                currentPos[1] + ',',
-                facingDirection
-              );
-              return true;
+              return handleReport();
             }
             default: {
               console.log('Invalid command');
@@ -230,6 +246,7 @@ export async function gameLoop(file?: File) {
       };
 
       result().then((res) => {
+        console.log(res);
         gameLoop();
         return res;
       });
